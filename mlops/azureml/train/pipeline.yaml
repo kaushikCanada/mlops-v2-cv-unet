@@ -1,0 +1,56 @@
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
+type: pipeline
+
+description: >-
+  UNet Semantic Segmentation Pipeline
+  This pipeline performs data splitting, model training, and prediction.
+  The model is used on-the-fly and not registered in the model registry.
+
+inputs:
+  data_dir:
+    type: uri_folder
+    mode: ro_mount
+    description: "Path to folder containing images, masks, and image_mask_mapping.csv"
+  config_path:
+    type: uri_file
+    mode: ro_mount
+    description: "Path to config YAML file"
+
+outputs:
+  model_output:
+    type: uri_folder
+    description: "Path to trained model artifacts"
+  predictions_output:
+    type: uri_folder
+    description: "Path to prediction results"
+
+settings:
+  default_datastore: azureml:workspaceblobstore  # Will be substituted by submit script or workflow
+  continue_on_step_failure: false
+
+jobs:
+  split:
+    type: command
+    component: file:split.yaml
+    compute: azureml:cpu-cluster  # Will be substituted by submit script or workflow
+    inputs:
+      raw_data: ${{parent.inputs.data_dir}}
+      config_data: ${{parent.inputs.config_path}}
+
+  train:
+    type: command
+    component: file:train.yaml
+    compute: azureml:${gpu_compute_name}
+    inputs:
+      train_data: ${{parent.inputs.data_dir}}
+      prep_input: ${{parent.jobs.split.outputs.prep_output}}
+      config_data: ${{parent.inputs.config_path}}
+
+  predict:
+    type: command
+    component: file:predict.yaml
+    compute: azureml:gpu-cluster  # Will be substituted by submit script or workflow
+    inputs:
+      model_path: ${{parent.jobs.train.outputs.model_output}}
+      data_dir: ${{parent.inputs.data_dir}}
+      config_data: ${{parent.inputs.config_path}}

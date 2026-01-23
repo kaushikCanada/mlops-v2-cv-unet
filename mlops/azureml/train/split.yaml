@@ -1,0 +1,32 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+
+description: >-
+  Splits the image_mask_mapping.csv file into train, validation, and test splits.
+  Does not move actual data files, only creates split CSV files.
+name: unet_data_split
+display_name: UNet Data Split Component
+version: 1.0.0
+
+inputs:
+  raw_data:
+    type: uri_folder
+    description: "Path to folder containing raw data with image_mask_mapping.csv"
+  config_data:
+    type: uri_file
+    description: "Path to config YAML file"
+
+outputs:
+  prep_output:
+    type: uri_folder
+    description: "Path to output folder containing split CSV files (train, val, test)"
+
+code: ../../../data-science/src/prep
+
+environment: azureml:azml-geo-deep-env:47  # Will be substituted by submit script or workflow
+
+command: >-
+  python prep.py
+  --raw_data ${{inputs.raw_data}}
+  --config_data ${{inputs.config_data}}
+  --output ${{outputs.prep_output}}

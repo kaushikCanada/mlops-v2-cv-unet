@@ -1,0 +1,36 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+
+description: >-
+  Runs prediction using a trained UNet model.
+  Loads model from checkpoint path and generates predictions on test data.
+name: unet_predict
+display_name: UNet Prediction Component
+version: 1.0.0
+
+inputs:
+  model_path:
+    type: uri_folder
+    description: "Path to folder containing trained model checkpoints"
+  data_dir:
+    type: uri_folder
+    description: "Path to folder containing data for prediction"
+  config_data:
+    type: uri_file
+    description: "Path to config YAML file"
+
+outputs:
+  predictions_output:
+    type: uri_folder
+    description: "Path to output folder containing prediction results"
+
+code: ../../../data-science/src/predict
+
+environment: azureml:azml-geo-deep-env:47  # Will be substituted by submit script or workflow
+
+command: >-
+  python predict.py
+  --model_path ${{inputs.model_path}}
+  --data_dir ${{inputs.data_dir}}
+  --config_path ${{inputs.config_data}}
+  --predictions_output ${{outputs.predictions_output}}

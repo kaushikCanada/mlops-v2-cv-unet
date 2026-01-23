@@ -1,0 +1,10 @@
+# UAT Environment Configuration
+# Edit these values to match your Azure ML workspace
+
+subscription_id: "YOUR_SUBSCRIPTION_ID"
+resource_group: "YOUR_RESOURCE_GROUP"
+workspace_name: "YOUR_WORKSPACE_NAME"
+cpu_compute_name: "cpu-cluster"
+gpu_compute_name: "gpu-cluster"
+default_datastore: "workspaceblobstore"
+environment_name: "azml-geo-deep-env:47"  # Use existing environment, format: name:version

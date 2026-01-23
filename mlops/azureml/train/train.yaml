@@ -1,0 +1,36 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+
+description: >-
+  Trains a UNet semantic segmentation model using PyTorch Lightning.
+  The model is saved as checkpoints but not registered in the model registry.
+name: unet_train
+display_name: UNet Training Component
+version: 1.0.0
+
+inputs:
+  train_data:
+    type: uri_folder
+    description: "Path to folder containing training data (images and masks)"
+  prep_input:
+    type: uri_folder
+    description: "Path to folder containing split CSV files from prep step"
+  config_data:
+    type: uri_file
+    description: "Path to config YAML file"
+
+outputs:
+  model_output:
+    type: uri_folder
+    description: "Path to output folder containing trained model checkpoints and artifacts"
+
+code: ../../../data-science/src/train
+
+environment: azureml:azml-geo-deep-env:47  # Will be substituted by submit script or workflow
+
+command: >-
+  python test_sst_trainer.py
+  --data_dir ${{inputs.train_data}}
+  --prep_input ${{inputs.prep_input}}
+  --config_path ${{inputs.config_data}}
+  --model_output ${{outputs.model_output}}
