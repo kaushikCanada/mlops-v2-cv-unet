@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from azure.identity import DefaultAzureCredential
 from azure.ai.ml import MLClient
-from azure.ai.ml import load_job
+from azure.ai.ml import load_job, Input
 from azure.ai.ml.constants import InputOutputModes
 
 def parse_args():
@@ -112,9 +112,17 @@ def main():
         print(f"Loading pipeline from: {temp_yaml}")
         pipeline_job = load_job(temp_yaml)
         
-        # Set pipeline inputs
-        pipeline_job.inputs.data_dir = args.data_dir
-        pipeline_job.inputs.config_path = args.config_path
+        # Set pipeline inputs using Input class to properly bind them
+        pipeline_job.inputs.data_dir = Input(
+            path=args.data_dir,
+            type="uri_folder",
+            mode=InputOutputModes.RO_MOUNT
+        )
+        pipeline_job.inputs.config_path = Input(
+            path=args.config_path,
+            type="uri_file",
+            mode=InputOutputModes.RO_MOUNT
+        )
         
         # Set pipeline settings
         pipeline_job.settings.default_datastore = config["default_datastore"]
