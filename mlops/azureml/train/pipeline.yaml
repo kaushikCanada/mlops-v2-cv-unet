@@ -9,20 +9,14 @@ description: >-
 inputs:
   data_dir:
     type: uri_folder
-    mode: ro_mount
-    description: "Path to folder containing images, masks, and image_mask_mapping.csv"
   config_path:
     type: uri_file
-    mode: ro_mount
-    description: "Path to config YAML file"
 
 outputs:
   model_output:
     type: uri_folder
-    description: "Path to trained model artifacts"
   predictions_output:
     type: uri_folder
-    description: "Path to prediction results"
 
 settings:
   default_datastore: azureml:workspaceblobstore  # Will be substituted by submit script or workflow
