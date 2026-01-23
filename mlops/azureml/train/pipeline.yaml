@@ -34,7 +34,7 @@ jobs:
   train:
     type: command
     component: file:train.yaml
-    compute: azureml:${gpu_compute_name}
+    compute: azureml:gpu-cluster  # Will be substituted by submit script or workflow
     inputs:
       train_data: ${{parent.inputs.data_dir}}
       prep_input: ${{parent.jobs.split.outputs.prep_output}}
