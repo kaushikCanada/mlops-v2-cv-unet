@@ -12,8 +12,8 @@ from pathlib import Path
 import torch
 
 # AZURE SQL LOGGER LIBRARY
-from utils import MLPipelineLogger
-import pyodbc
+# from utils import MLPipelineLogger
+# import pyodbc
 
 def parse_args():
     parser = argparse.ArgumentParser("SemanticSegmentationDatamodule")
@@ -39,26 +39,26 @@ def main():
     print(runs.head())
     run_id = runs['tags.mlflow.rootRunId'][0]
 
-    # List all available ODBC drivers
-    available_drivers = pyodbc.drivers()
-    print("Available ODBC drivers:")
-    for driver in available_drivers:
-        print(f"  - {driver}")
+    # # List all available ODBC drivers
+    # available_drivers = pyodbc.drivers()
+    # print("Available ODBC drivers:")
+    # for driver in available_drivers:
+    #     print(f"  - {driver}")
 
     # Initialize AZURE SQL LOGGER
-    logger = MLPipelineLogger(
-        "DRIVER={ODBC Driver 18 for SQL Server};"
-        "SERVER=trackjob.database.windows.net;"
-        "DATABASE=devdb;"
-        "UID=devadmin;"
-        "PWD=Password1$"
-    )
+    # logger = MLPipelineLogger(
+    #     "DRIVER={ODBC Driver 18 for SQL Server};"
+    #     "SERVER=trackjob.database.windows.net;"
+    #     "DATABASE=devdb;"
+    #     "UID=devadmin;"
+    #     "PWD=Password1$"
+    # )
 
     try:
         args = parse_args()
         print(args)
 
-        logger.start_phase(run_id, "model_train")
+        # logger.start_phase(run_id, "model_train")
 
         with open(args.config_path, "r") as f:
             config = yaml.safe_load(f)  # safer than yaml.load
@@ -136,13 +136,13 @@ def main():
         print(f"Final model saved to {final_model_path}")
         
         # AZURE SQL LOGGER - END PIPELINE PHASE DATA_PREP
-        logger.complete_phase(run_id, "model_train")
+        # logger.complete_phase(run_id, "model_train")
 
         # AZURE SQL LOGGER - MAIN PIPELINE RUN COMPLETED
-        logger.complete_pipeline_run(run_id, "Completed")
+        # logger.complete_pipeline_run(run_id, "Completed")
     except Exception as e:
         # AZURE SQL LOGGER - MAIN PIPELINE FAILED
-        logger.complete_pipeline_run(run_id, "Failed" + str(e))
+        # logger.complete_pipeline_run(run_id, "Failed" + str(e))
         raise Exception("Failed")
 
 if __name__ == "__main__":
