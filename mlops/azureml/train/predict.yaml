@@ -15,6 +15,9 @@ inputs:
   data_dir:
     type: uri_folder
     description: "Path to folder containing data for prediction"
+  prep_input:
+    type: uri_folder
+    description: "Path to folder containing split CSV files from prep step (image_mask_mapping_test.csv)"
   config_data:
     type: uri_file
     description: "Path to config YAML file"
@@ -32,5 +35,6 @@ command: >-
   python predict.py
   --model_path ${{inputs.model_path}}
   --data_dir ${{inputs.data_dir}}
+  --prep_input ${{inputs.prep_input}}
   --config_path ${{inputs.config_data}}
   --predictions_output ${{outputs.predictions_output}}

@@ -118,6 +118,10 @@ class CustomSemanticSegmentationDataModule(NonGeoDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
+
+    def predict_dataloader(self):
+        """Use the same test split as the predict dataset (inference on held-out test set)."""
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
     
     # def on_after_batch_transfer(
     #         self, batch: dict[str, torch.Tensor], dataloader_idx: int

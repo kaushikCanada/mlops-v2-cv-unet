@@ -23,14 +23,15 @@ from custom_sst_trainer import CustomSemanticSegmentationTask
 import lightning.pytorch as pl
 
 # AZURE SQL LOGGER LIBRARY
-from utils import MLPipelineLogger
-import pyodbc
+# from utils import MLPipelineLogger
+# import pyodbc
 
 def parse_args():
     '''Parse input arguments'''
     parser = argparse.ArgumentParser("predict")
     parser.add_argument("--model_path", type=str, help="Path to trained model")
     parser.add_argument("--data_dir", type=str, help="Path to data directory")
+    parser.add_argument("--prep_input", type=str, help="Path to folder containing split CSV files from prep step")
     parser.add_argument("--config_path", type=str, help="Path to config file")
     parser.add_argument("--predictions_output", type=str, help="Path to save predictions")
     
@@ -77,22 +78,22 @@ def main(args):
     run_id = runs['tags.mlflow.rootRunId'][0]
 
     # List all available ODBC drivers
-    available_drivers = pyodbc.drivers()
-    print("Available ODBC drivers:")
-    for driver in available_drivers:
-        print(f"  - {driver}")
+    # available_drivers = pyodbc.drivers()
+    # print("Available ODBC drivers:")
+    # for driver in available_drivers:
+    #     print(f"  - {driver}")
 
     # Initialize AZURE SQL LOGGER
-    logger = MLPipelineLogger(
-        "DRIVER={ODBC Driver 18 for SQL Server};"
-        "SERVER=trackjob.database.windows.net;"
-        "DATABASE=devdb;"
-        "UID=devadmin;"
-        "PWD=Password1$"
-    )
+    # logger = MLPipelineLogger(
+    #     "DRIVER={ODBC Driver 18 for SQL Server};"
+    #     "SERVER=trackjob.database.windows.net;"
+    #     "DATABASE=devdb;"
+    #     "UID=devadmin;"
+    #     "PWD=Password1$"
+    # )
 
     try:
-        logger.start_phase(run_id, "prediction")
+        # logger.start_phase(run_id, "prediction")
 
         # Load config
         with open(args.config_path, "r") as f:
@@ -126,32 +127,36 @@ def main(args):
         model = load_model_from_checkpoint(checkpoint_path, config)
         model.eval()
 
-        # Setup data module for test/prediction
+        # Setup data module (use prep_input so test/predict use test split)
         batch_size = config.get('data', {}).get('batch_size', 8)
         num_workers = config.get('data', {}).get('num_workers', 4)
 
         dm = CustomSemanticSegmentationDataModule(
             data_dir=args.data_dir,
-            splits_dir=args.data_dir,  # Use same directory for splits if available
+            splits_dir=args.prep_input,  # folder with image_mask_mapping_test.csv
             config_path=args.config_path,
             batch_size=batch_size,
             num_workers=num_workers
         )
-        
         dm.setup(stage='test')
 
-        # Create output directory
+        # Create a trainer (for test + predict; no training)
+        trainer = pl.Trainer(devices=1, accelerator='auto', logger=False)
+
+        # 1) Run test to compute and show metrics
+        print("Running evaluation on test set...")
+        trainer.test(model, dm)
+
+        # 2) Run prediction and save images (using predict_dataloader)
         output_path = Path(args.predictions_output)
         output_path.mkdir(parents=True, exist_ok=True)
-
-        # Run predictions
         predictions_dir = output_path / "predictions"
         predictions_dir.mkdir(exist_ok=True)
 
-        test_loader = dm.test_dataloader()
+        predict_loader = dm.predict_dataloader()
         
         with torch.no_grad():
-            for batch_idx, batch in enumerate(test_loader):
+            for batch_idx, batch in enumerate(predict_loader):
                 images = batch['image']
                 masks = batch['mask']  # Ground truth for reference
                 
@@ -178,14 +183,14 @@ def main(args):
         print(f"Predictions saved to {predictions_dir}")
 
         # AZURE SQL LOGGER - END PIPELINE PHASE
-        logger.complete_phase(run_id, "prediction")
+        # logger.complete_phase(run_id, "prediction")
 
         # AZURE SQL LOGGER - MAIN PIPELINE RUN COMPLETED
-        logger.complete_pipeline_run(run_id, "Completed")
+        # logger.complete_pipeline_run(run_id, "Completed")
         
     except Exception as e:
         # AZURE SQL LOGGER - MAIN PIPELINE FAILED
-        logger.complete_pipeline_run(run_id, "Failed" + str(e))
+        # logger.complete_pipeline_run(run_id, "Failed" + str(e))
         raise Exception("Failed")
 
 
