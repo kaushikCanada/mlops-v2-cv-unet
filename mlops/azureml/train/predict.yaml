@@ -27,12 +27,12 @@ outputs:
     type: uri_folder
     description: "Path to output folder containing prediction results"
 
-code: ../../../data-science/src/predict
+code: ../../../data-science/src
 
 environment: azureml:azml-geo-deep-env:47  # Will be substituted by submit script or workflow
 
 command: >-
-  python predict.py
+  python predict/predict.py
   --model_path ${{inputs.model_path}}
   --data_dir ${{inputs.data_dir}}
   --prep_input ${{inputs.prep_input}}
