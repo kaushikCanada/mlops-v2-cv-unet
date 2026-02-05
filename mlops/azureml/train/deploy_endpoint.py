@@ -94,7 +94,7 @@ def main():
         component = ml_client.components.create_or_update(pipeline_component)
         print(f"Component created: {component_name}:{args.component_version}")
         
-        endpoint_name = f"unet_train_endpoint_{args.env}"
+        endpoint_name = f"unet-train-endpoint-{args.env}"
         print(f"Creating batch endpoint: {endpoint_name}")
         
         endpoint = BatchEndpoint(
@@ -110,7 +110,7 @@ def main():
             print(f"Endpoint exists, continuing...")
             endpoint = ml_client.batch_endpoints.get(endpoint_name)
         
-        deployment_name = f"unet_train_deploy_{args.env}"
+        deployment_name = f"unet-train-deploy-{args.env}"
         print(f"Creating deployment: {deployment_name}")
         
         deployment = PipelineComponentBatchDeployment(
