@@ -41,12 +41,27 @@ def get_ml_client(config: dict):
     return ml_client
 
 
-def substitute_variables(pipeline_yaml_path: Path, config: dict):
+def substitute_variables(pipeline_yaml_path: Path, config: dict, component_name: str, version: str):
     with open(pipeline_yaml_path, "r") as f:
         content = f.read()
+    
+    # Change schema from pipelineJob to pipelineComponent
+    content = content.replace(
+        "https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json",
+        "https://azuremlschemas.azureedge.net/latest/pipelineComponent.schema.json"
+    )
+    
+    # Add name and version fields after type: pipeline
+    content = content.replace(
+        "type: pipeline\n",
+        f"type: pipeline\nname: {component_name}\nversion: {version}\n"
+    )
+    
+    # Substitute compute/datastore variables
     content = content.replace("azureml:workspaceblobstore", f"azureml:{config['default_datastore']}")
     content = content.replace("azureml:cpu-cluster", f"azureml:{config['cpu_compute_name']}")
     content = content.replace("azureml:gpu-cluster", f"azureml:{config['gpu_compute_name']}")
+    
     temp_yaml = pipeline_yaml_path.parent / "pipeline_temp.yaml"
     with open(temp_yaml, "w") as f:
         f.write(content)
@@ -62,17 +77,17 @@ def main():
     
     ml_client = get_ml_client(config)
     pipeline_yaml_path = Path(__file__).parent / "pipeline.yaml"
-    temp_yaml = substitute_variables(pipeline_yaml_path, config)
+    
+    # Prepare component name and version
+    component_name = f"unet-training-pipeline-{args.env}"
+    temp_yaml = substitute_variables(pipeline_yaml_path, config, component_name, args.component_version)
     
     try:
         # Load pipeline as a component directly
         print(f"Loading pipeline component from: {temp_yaml}")
         pipeline_component = load_component(source=temp_yaml)
         
-        # Set environment-specific name and version
-        component_name = f"unet-training-pipeline-{args.env}"
-        pipeline_component.name = component_name
-        pipeline_component.version = args.component_version
+        # Set description
         pipeline_component.description = f"UNet Training Pipeline ({args.env.upper()})"
         
         print(f"Creating pipeline component: {component_name}")
