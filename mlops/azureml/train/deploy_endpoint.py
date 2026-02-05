@@ -10,8 +10,8 @@ import argparse
 import yaml
 from pathlib import Path
 from azure.identity import DefaultAzureCredential
-from azure.ai.ml import MLClient, load_job
-from azure.ai.ml.entities import BatchEndpoint, PipelineComponentBatchDeployment, PipelineComponent
+from azure.ai.ml import MLClient, load_component
+from azure.ai.ml.entities import BatchEndpoint, PipelineComponentBatchDeployment
 
 
 def parse_args():
@@ -65,18 +65,17 @@ def main():
     temp_yaml = substitute_variables(pipeline_yaml_path, config)
     
     try:
-        pipeline_job = load_job(temp_yaml)
+        # Load pipeline as a component directly
+        print(f"Loading pipeline component from: {temp_yaml}")
+        pipeline_component = load_component(source=temp_yaml)
+        
+        # Set environment-specific name and version
         component_name = f"unet-training-pipeline-{args.env}"
+        pipeline_component.name = component_name
+        pipeline_component.version = args.component_version
+        pipeline_component.description = f"UNet Training Pipeline ({args.env.upper()})"
         
         print(f"Creating pipeline component: {component_name}")
-        pipeline_component = PipelineComponent(
-            name=component_name,
-            version=args.component_version,
-            description=f"UNet Training Pipeline ({args.env.upper()})",
-            jobs=pipeline_job.jobs,
-            inputs=pipeline_job.inputs,
-            outputs=pipeline_job.outputs,
-        )
         component = ml_client.components.create_or_update(pipeline_component)
         print(f"Component created: {component_name}:{args.component_version}")
         
