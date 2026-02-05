@@ -78,8 +78,8 @@ def main():
     ml_client = get_ml_client(config)
     pipeline_yaml_path = Path(__file__).parent / "pipeline.yaml"
     
-    # Prepare component name and version
-    component_name = f"unet-training-pipeline-{args.env}"
+    # Prepare component name and version (use underscores - hyphens not allowed in component names)
+    component_name = f"unet_training_pipeline_{args.env}"
     temp_yaml = substitute_variables(pipeline_yaml_path, config, component_name, args.component_version)
     
     try:
@@ -94,7 +94,7 @@ def main():
         component = ml_client.components.create_or_update(pipeline_component)
         print(f"Component created: {component_name}:{args.component_version}")
         
-        endpoint_name = f"unet-train-endpoint-{args.env}"
+        endpoint_name = f"unet_train_endpoint_{args.env}"
         print(f"Creating batch endpoint: {endpoint_name}")
         
         endpoint = BatchEndpoint(
@@ -110,7 +110,7 @@ def main():
             print(f"Endpoint exists, continuing...")
             endpoint = ml_client.batch_endpoints.get(endpoint_name)
         
-        deployment_name = f"unet-train-deploy-{args.env}"
+        deployment_name = f"unet_train_deploy_{args.env}"
         print(f"Creating deployment: {deployment_name}")
         
         deployment = PipelineComponentBatchDeployment(
