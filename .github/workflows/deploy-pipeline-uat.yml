@@ -52,11 +52,6 @@ jobs:
           EOF
 
       - name: Deploy Pipeline Component and Endpoint
-        env:
-          AZURE_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          AZURE_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         run: |
           python - <<EOF
           import yaml
@@ -135,11 +130,6 @@ jobs:
 
       - name: Run Pipeline (Optional)
         if: ${{ github.event.inputs.data_dir != '' && github.event.inputs.config_path != '' }}
-        env:
-          AZURE_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          AZURE_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         run: |
           python mlops/azureml/train/submit_pipeline.py \
             --env uat \

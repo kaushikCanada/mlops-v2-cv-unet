@@ -137,10 +137,6 @@ The `submit_pipeline.py` script uses `DefaultAzureCredential` which automaticall
    Go to your GitHub repository → Settings → Secrets → Actions, and add:
 
    - **AZURE_CREDENTIALS**: Full JSON output from the service principal command (all braces included)
-   - **ARM_CLIENT_ID**: Client ID from service principal output
-   - **ARM_CLIENT_SECRET**: Client secret from service principal output
-   - **ARM_SUBSCRIPTION_ID**: Your Azure subscription ID
-   - **ARM_TENANT_ID**: Your Azure tenant ID
 
 ### GitHub Secrets for Configuration Values
 
