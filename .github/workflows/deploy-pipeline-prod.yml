@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       data_dir:
-        description: 'Data directory path (azureml://...)'
-        required: true
+        description: 'Data directory path (azureml://...) - leave empty for deploy-only'
+        required: false
         type: string
       config_path:
-        description: 'Config YAML path (azureml://...)'
-        required: true
+        description: 'Config YAML path (azureml://...) - leave empty for deploy-only'
+        required: false
         type: string
 
 env:
@@ -51,82 +51,8 @@ jobs:
           environment_name: "${{ secrets.PROD_ENVIRONMENT_NAME }}"
           EOF
 
-      - name: Deploy Pipeline Component and Endpoint
-        run: |
-          python - <<EOF
-          import yaml
-          import os
-          from pathlib import Path
-          from azure.identity import DefaultAzureCredential
-          from azure.ai.ml import MLClient
-          from azure.ai.ml.entities import PipelineComponent, PipelineJob
-          from azure.ai.ml import load_job, load_component
-          import json
-
-          # Load config
-          config_path = Path("config/config-prod.yml")
-          with open(config_path, "r") as f:
-              config = yaml.safe_load(f)
-
-          # Get ML Client
-          credential = DefaultAzureCredential()
-          ml_client = MLClient(
-              credential=credential,
-              subscription_id=config["subscription_id"],
-              resource_group_name=config["resource_group"],
-              workspace_name=config["workspace_name"],
-          )
-
-          # Substitute variables in pipeline YAML
-          pipeline_yaml = Path("mlops/azureml/train/pipeline.yaml")
-          with open(pipeline_yaml, "r") as f:
-              content = f.read()
-          
-          content = content.replace("\${environment_name}", config["environment_name"])
-          content = content.replace("\${default_datastore}", config["default_datastore"])
-          content = content.replace("\${cpu_compute_name}", config["cpu_compute_name"])
-          content = content.replace("\${gpu_compute_name}", config["gpu_compute_name"])
-
-          temp_yaml = Path("mlops/azureml/train/pipeline_temp.yaml")
-          with open(temp_yaml, "w") as f:
-              f.write(content)
-
-          try:
-              # Load pipeline job
-              pipeline_job = load_job(temp_yaml)
-              
-              # Create or update pipeline component
-              component_name = "unet-pipeline-component"
-              try:
-                  existing_component = ml_client.components.get(component_name, version="1")
-                  print(f"Component {component_name} exists, updating...")
-                  ml_client.components.archive(component_name, version="1")
-              except:
-                  print(f"Component {component_name} does not exist, creating...")
-              
-              # Create new version
-              pipeline_component = PipelineComponent(
-                  name=component_name,
-                  version="1",
-                  description="UNet Semantic Segmentation Pipeline",
-                  jobs=pipeline_job.jobs,
-                  inputs=pipeline_job.inputs,
-                  outputs=pipeline_job.outputs,
-              )
-              
-              ml_client.components.create_or_update(pipeline_component)
-              print(f"Pipeline component {component_name} created/updated successfully")
-
-              # Create or update pipeline endpoint
-              endpoint_name = "unet-pipeline-endpoint-prod"
-              print(f"Pipeline endpoint: {endpoint_name}")
-              print("Pipeline endpoint creation requires additional setup")
-              print("You can create it manually via Azure ML Studio or use az ml CLI")
-
-          finally:
-              if temp_yaml.exists():
-                  temp_yaml.unlink()
-          EOF
+      - name: Deploy Batch Endpoint
+        run: python mlops/azureml/train/deploy_endpoint.py --env prod
 
       - name: Run Pipeline (Optional)
         if: ${{ github.event.inputs.data_dir != '' && github.event.inputs.config_path != '' }}
